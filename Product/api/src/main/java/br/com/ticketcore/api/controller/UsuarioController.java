@@ -5,10 +5,15 @@ import br.com.ticketcore.api.model.dto.UsuarioCadastroRequest;
 import br.com.ticketcore.api.model.dto.UsuarioAtualizacaoRequest;
 import br.com.ticketcore.api.model.dto.UsuarioResponse;
 import br.com.ticketcore.api.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Usuários", description = "Gerenciamento de usuários")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
@@ -19,6 +24,7 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    @Operation(summary = "Buscar por ID", description = "Retorna os dados de um usuário pelo ID")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> buscarPorId(@PathVariable Long id) {
         Usuario usuario = usuarioService.buscarPorId(id);
@@ -26,6 +32,7 @@ public class UsuarioController {
         return ResponseEntity.ok(UsuarioResponse.from(usuario));
     }
 
+    @Operation(summary = "Buscar por e-mail", description = "Retorna os dados de um usuário pelo e-mail")
     @GetMapping("/email/{email}")
     public ResponseEntity<UsuarioResponse> buscarPorEmail(@PathVariable String email) {
         Usuario usuario = usuarioService.buscarPorEmail(email);
@@ -33,6 +40,7 @@ public class UsuarioController {
         return ResponseEntity.ok(UsuarioResponse.from(usuario));
     }
 
+    @Operation(summary = "Cadastrar usuário", description = "Cria um novo usuário com senha criptografada. Endpoint público — não requer token.")
     @PostMapping
     public ResponseEntity<UsuarioResponse> salvar(@RequestBody UsuarioCadastroRequest request) {
         Usuario usuario = new Usuario();
@@ -46,6 +54,7 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioResponse.from(salvo));
     }
 
+    @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário existente")
     @PutMapping("/{id}")
     public ResponseEntity<Void> atualizar(@PathVariable Long id,
                                           @RequestBody UsuarioAtualizacaoRequest request) {
@@ -58,6 +67,7 @@ public class UsuarioController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Remover usuário", description = "Remove um usuário pelo ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         usuarioService.deletar(id);
