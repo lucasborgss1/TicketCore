@@ -8,6 +8,6 @@ public interface TransacaoDAO {
     Transacao buscarPorId(Long id);
     List<Transacao> listarPorComprador(Long idComprador);
     void atualizar(Transacao transacao);
-
+    void atualizarStatus(Long idTransacao, String status);
     void cancelarTransacao(Long idTransacao, Long idUsuarioSolicitante); // Chama a Stored Procedure
 }

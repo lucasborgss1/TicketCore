@@ -14,4 +14,7 @@ public interface EventoDAO {
 
     Integer calcularCapacidadeRestante(Long idEvento); // Chama a Stored Function
     List<Map<String, Object>> listarResumoVendas(); // Consome a View com JOINs
+
+    Long buscarOrganizadorPorTipoIngresso(Long idTipoIngresso);
+    Long buscarOrganizadorPorTransacao(Long idTransacao);
 }

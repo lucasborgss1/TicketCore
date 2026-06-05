@@ -170,6 +170,54 @@ public class EventoDAOImpl implements EventoDAO {
         return lista;
     }
 
+    @Override
+    public Long buscarOrganizadorPorTipoIngresso(Long idTipoIngresso) {
+        String sql = """
+                SELECT e.eve_id_organizador
+                FROM EVE_evento e
+                JOIN TPI_tipo_ingresso tpi ON tpi.tpi_id_evento = e.eve_id_evento
+                WHERE tpi.tpi_id_tipo_ingresso = ?
+                """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idTipoIngresso);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar organizador por tipo de ingresso", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Long buscarOrganizadorPorTransacao(Long idTransacao) {
+        String sql = """
+                SELECT DISTINCT e.eve_id_organizador
+                FROM EVE_evento e
+                JOIN TPI_tipo_ingresso tpi ON tpi.tpi_id_evento = e.eve_id_evento
+                JOIN ING_ingresso ing ON ing.ing_id_tipo_ingresso = tpi.tpi_id_tipo_ingresso
+                WHERE ing.ing_id_transacao = ?
+                LIMIT 1
+                """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idTransacao);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar organizador por transação", e);
+        }
+        return null;
+    }
+
     private Evento mapear(ResultSet rs) throws SQLException {
         Evento obj = new Evento();
         obj.setIdEvento(rs.getLong("eve_id_evento"));

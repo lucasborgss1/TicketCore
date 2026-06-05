@@ -95,6 +95,20 @@ public class TransacaoDAOImpl implements TransacaoDAO {
     }
 
     @Override
+    public void atualizarStatus(Long idTransacao, String status) {
+        String sql = "UPDATE TRA_transacao SET tra_st_transacao = ? WHERE tra_id_transacao = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status);
+            stmt.setLong(2, idTransacao);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao atualizar status da transação", e);
+        }
+    }
+
+    @Override
     public void cancelarTransacao(Long idTransacao, Long idUsuarioSolicitante) {
         String sql = "CALL PR_cancelar_transacao(?, ?)";
 
@@ -104,7 +118,7 @@ public class TransacaoDAOImpl implements TransacaoDAO {
             stmt.setLong(2, idUsuarioSolicitante);
             stmt.execute();
         } catch (SQLException e) {
-            // A procedure lança RAISE EXCEPTION com mensagens de negócio — repassamos a mensagem original
+            // A procedure lança RAISE EXCEPTION com mensagens de negócio
             throw new DAOException(e.getMessage(), e);
         }
     }
