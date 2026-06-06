@@ -59,6 +59,29 @@ public class EventoDAOImpl implements EventoDAO {
     }
 
     @Override
+    public Evento buscarPorIdEOrganizador(Long idEvento, Long idOrganizador) {
+        String sql = """
+                SELECT eve_id_evento, eve_id_organizador, eve_id_categoria, eve_nm_evento,
+                       eve_dt_evento, eve_nm_local, eve_qt_capacidade, eve_ds_imagem
+                FROM EVE_evento
+                WHERE eve_id_evento = ? AND eve_id_organizador = ?
+                """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idEvento);
+            stmt.setLong(2, idOrganizador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar evento por ID e organizador", e);
+        }
+        return null;
+    }
+
+    @Override
     public List<Evento> listarTodos() {
         String sql = "SELECT eve_id_evento, eve_id_organizador, eve_id_categoria, eve_nm_evento, eve_dt_evento, eve_nm_local, eve_qt_capacidade, eve_ds_imagem FROM EVE_evento ORDER BY eve_dt_evento";
         List<Evento> lista = new ArrayList<>();
@@ -146,26 +169,27 @@ public class EventoDAOImpl implements EventoDAO {
     }
 
     @Override
-    public List<Map<String, Object>> listarResumoVendas() {
-        String sql = "SELECT eve_id_evento, eve_nm_evento, eve_dt_evento, qt_capacidade_total, qt_ingressos_vendidos, qt_capacidade_restante, vl_receita_total FROM VW_resumo_vendas_evento ORDER BY eve_dt_evento";
+    public List<Map<String, Object>> listarResumoVendasPorOrganizador(Long idOrganizador) {
+        String sql = "SELECT eve_id_evento, eve_nm_evento, eve_dt_evento, qt_capacidade_total, qt_ingressos_vendidos, qt_capacidade_restante, vl_receita_total FROM VW_resumo_vendas_evento WHERE eve_id_organizador = ? ORDER BY eve_dt_evento";
         List<Map<String, Object>> lista = new ArrayList<>();
-
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                Map<String, Object> linha = new HashMap<>();
-                linha.put("idEvento", rs.getLong("eve_id_evento"));
-                linha.put("nmEvento", rs.getString("eve_nm_evento"));
-                linha.put("dtEvento", rs.getTimestamp("eve_dt_evento").toLocalDateTime());
-                linha.put("qtCapacidadeTotal", rs.getInt("qt_capacidade_total"));
-                linha.put("qtIngressosVendidos", rs.getInt("qt_ingressos_vendidos"));
-                linha.put("qtCapacidadeRestante", rs.getInt("qt_capacidade_restante"));
-                linha.put("vlReceitaTotal", rs.getBigDecimal("vl_receita_total"));
-                lista.add(linha);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idOrganizador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> linha = new HashMap<>();
+                    linha.put("idEvento", rs.getLong("eve_id_evento"));
+                    linha.put("nmEvento", rs.getString("eve_nm_evento"));
+                    linha.put("dtEvento", rs.getTimestamp("eve_dt_evento").toLocalDateTime());
+                    linha.put("qtCapacidadeTotal", rs.getInt("qt_capacidade_total"));
+                    linha.put("qtIngressosVendidos", rs.getInt("qt_ingressos_vendidos"));
+                    linha.put("qtCapacidadeRestante", rs.getInt("qt_capacidade_restante"));
+                    linha.put("vlReceitaTotal", rs.getBigDecimal("vl_receita_total"));
+                    lista.add(linha);
+                }
             }
         } catch (SQLException e) {
-            throw new DAOException("Erro ao listar resumo de vendas por evento", e);
+            throw new DAOException("Erro ao listar resumo de vendas por organizador", e);
         }
         return lista;
     }

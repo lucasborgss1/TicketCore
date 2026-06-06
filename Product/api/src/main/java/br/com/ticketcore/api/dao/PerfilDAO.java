@@ -9,4 +9,6 @@ public interface PerfilDAO {
     List<Perfil> listarTodos();
     void atualizar(Perfil perfil);
     void deletar(Long id);
+    Perfil buscarPorNome(String nome);
+    List<String> buscarNomesPorUsuario(Long idUsuario);
 }

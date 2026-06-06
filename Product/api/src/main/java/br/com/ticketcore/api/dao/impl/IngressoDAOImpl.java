@@ -55,6 +55,30 @@ public class IngressoDAOImpl implements IngressoDAO {
     }
 
     @Override
+    public Ingresso buscarPorIdEComprador(Long idIngresso, Long idComprador) {
+        String sql = """
+                SELECT i.ing_id_ingresso, i.ing_id_transacao, i.ing_id_tipo_ingresso,
+                       i.ing_cd_acesso, i.ing_st_ingresso
+                FROM ING_ingresso i
+                JOIN TRA_transacao t ON i.ing_id_transacao = t.tra_id_transacao
+                WHERE i.ing_id_ingresso = ? AND t.tra_id_comprador = ?
+                """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idIngresso);
+            stmt.setLong(2, idComprador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar ingresso por ID e comprador", e);
+        }
+        return null;
+    }
+
+    @Override
     public Ingresso buscarPorCodigoAcesso(String codigoAcesso) {
         String sql = "SELECT ing_id_ingresso, ing_id_transacao, ing_id_tipo_ingresso, ing_cd_acesso, ing_st_ingresso FROM ING_ingresso WHERE ing_cd_acesso = ?";
 
@@ -68,6 +92,30 @@ public class IngressoDAOImpl implements IngressoDAO {
             }
         } catch (SQLException e) {
             throw new DAOException("Erro ao buscar ingresso por código de acesso", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Ingresso buscarPorCodigoEComprador(String codigoAcesso, Long idComprador) {
+        String sql = """
+                SELECT i.ing_id_ingresso, i.ing_id_transacao, i.ing_id_tipo_ingresso,
+                       i.ing_cd_acesso, i.ing_st_ingresso
+                FROM ING_ingresso i
+                JOIN TRA_transacao t ON i.ing_id_transacao = t.tra_id_transacao
+                WHERE i.ing_cd_acesso = ? AND t.tra_id_comprador = ?
+                """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, codigoAcesso);
+            stmt.setLong(2, idComprador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar ingresso por código e comprador", e);
         }
         return null;
     }
@@ -87,6 +135,31 @@ public class IngressoDAOImpl implements IngressoDAO {
             }
         } catch (SQLException e) {
             throw new DAOException("Erro ao listar ingressos por transação", e);
+        }
+        return lista;
+    }
+
+    @Override
+    public List<Ingresso> listarPorTransacaoEComprador(Long idTransacao, Long idComprador) {
+        String sql = """
+                SELECT i.ing_id_ingresso, i.ing_id_transacao, i.ing_id_tipo_ingresso,
+                       i.ing_cd_acesso, i.ing_st_ingresso
+                FROM ING_ingresso i
+                JOIN TRA_transacao t ON i.ing_id_transacao = t.tra_id_transacao
+                WHERE i.ing_id_transacao = ? AND t.tra_id_comprador = ?
+                """;
+        List<Ingresso> lista = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idTransacao);
+            stmt.setLong(2, idComprador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapear(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao listar ingressos por transação e comprador", e);
         }
         return lista;
     }

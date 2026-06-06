@@ -54,6 +54,30 @@ public class TipoIngressoDAOImpl implements TipoIngressoDAO {
     }
 
     @Override
+    public TipoIngresso buscarPorIdEOrganizador(Long idTipoIngresso, Long idOrganizador) {
+        String sql = """
+                SELECT tpi.tpi_id_tipo_ingresso, tpi.tpi_id_evento, tpi.tpi_nm_tipo,
+                       tpi.tpi_vl_preco, tpi.tpi_qt_lote
+                FROM TPI_tipo_ingresso tpi
+                JOIN EVE_evento e ON tpi.tpi_id_evento = e.eve_id_evento
+                WHERE tpi.tpi_id_tipo_ingresso = ? AND e.eve_id_organizador = ?
+                """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idTipoIngresso);
+            stmt.setLong(2, idOrganizador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar tipo de ingresso por ID e organizador", e);
+        }
+        return null;
+    }
+
+    @Override
     public List<TipoIngresso> listarPorEvento(Long idEvento) {
         String sql = "SELECT tpi_id_tipo_ingresso, tpi_id_evento, tpi_nm_tipo, tpi_vl_preco, tpi_qt_lote FROM TPI_tipo_ingresso WHERE tpi_id_evento = ? ORDER BY tpi_nm_tipo";
         List<TipoIngresso> lista = new ArrayList<>();

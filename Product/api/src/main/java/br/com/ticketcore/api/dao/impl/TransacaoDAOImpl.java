@@ -60,6 +60,28 @@ public class TransacaoDAOImpl implements TransacaoDAO {
     }
 
     @Override
+    public Transacao buscarPorIdEComprador(Long idTransacao, Long idComprador) {
+        String sql = """
+                SELECT tra_id_transacao, tra_id_comprador, tra_dt_transacao, tra_st_transacao, tra_vl_total
+                FROM TRA_transacao
+                WHERE tra_id_transacao = ? AND tra_id_comprador = ?
+                """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idTransacao);
+            stmt.setLong(2, idComprador);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar transação por ID e comprador", e);
+        }
+        return null;
+    }
+
+    @Override
     public List<Transacao> listarPorComprador(Long idComprador) {
         String sql = "SELECT tra_id_transacao, tra_id_comprador, tra_dt_transacao, tra_st_transacao, tra_vl_total FROM TRA_transacao WHERE tra_id_comprador = ? ORDER BY tra_dt_transacao DESC";
         List<Transacao> lista = new ArrayList<>();

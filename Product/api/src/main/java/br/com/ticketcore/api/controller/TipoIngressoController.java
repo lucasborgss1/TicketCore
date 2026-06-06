@@ -7,8 +7,11 @@ import br.com.ticketcore.api.service.TipoIngressoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,35 +46,44 @@ public class TipoIngressoController {
         );
     }
 
-    @Operation(summary = "Cadastrar tipo de ingresso", description = "Cria um novo tipo de ingresso para um evento")
+    @Operation(summary = "Cadastrar tipo de ingresso", description = "Cria um novo tipo de ingresso para um evento do organizador autenticado")
+    @PreAuthorize("hasRole('ORGANIZADOR')")
     @PostMapping
-    public ResponseEntity<Void> salvar(@RequestBody TipoIngressoRequest request) {
+    public ResponseEntity<Void> salvar(
+            @Valid @RequestBody TipoIngressoRequest request,
+            @AuthenticationPrincipal Long idUsuario) {
         TipoIngresso tipo = new TipoIngresso();
         tipo.setIdEvento(request.idEvento());
         tipo.setNmTipo(request.nmTipo());
         tipo.setVlPreco(request.vlPreco());
         tipo.setQtLote(request.qtLote());
-        tipoIngressoService.salvar(tipo);
+        tipoIngressoService.salvar(tipo, idUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Atualizar tipo de ingresso", description = "Atualiza os dados de um tipo de ingresso existente")
+    @Operation(summary = "Atualizar tipo de ingresso", description = "Atualiza os dados de um tipo de ingresso de evento do organizador autenticado")
+    @PreAuthorize("hasRole('ORGANIZADOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<Void> atualizar(@PathVariable Long id,
-                                          @RequestBody TipoIngressoRequest request) {
+    public ResponseEntity<Void> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody TipoIngressoRequest request,
+            @AuthenticationPrincipal Long idUsuario) {
         TipoIngresso tipo = new TipoIngresso();
         tipo.setIdEvento(request.idEvento());
         tipo.setNmTipo(request.nmTipo());
         tipo.setVlPreco(request.vlPreco());
         tipo.setQtLote(request.qtLote());
-        tipoIngressoService.atualizar(id, tipo);
+        tipoIngressoService.atualizar(id, tipo, idUsuario);
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Remover tipo de ingresso", description = "Remove um tipo de ingresso pelo ID")
+    @Operation(summary = "Remover tipo de ingresso", description = "Remove um tipo de ingresso de evento do organizador autenticado")
+    @PreAuthorize("hasRole('ORGANIZADOR')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        tipoIngressoService.deletar(id);
+    public ResponseEntity<Void> deletar(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long idUsuario) {
+        tipoIngressoService.deletar(id, idUsuario);
         return ResponseEntity.noContent().build();
     }
 }
