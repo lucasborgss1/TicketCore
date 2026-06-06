@@ -6,6 +6,7 @@ import java.util.List;
 public interface TransacaoDAO {
     Long salvar(Transacao transacao);
     Transacao buscarPorId(Long id);
+    Transacao buscarPorIdEComprador(Long idTransacao, Long idComprador);
     List<Transacao> listarPorComprador(Long idComprador);
     void atualizar(Transacao transacao);
     void atualizarStatus(Long idTransacao, String status);

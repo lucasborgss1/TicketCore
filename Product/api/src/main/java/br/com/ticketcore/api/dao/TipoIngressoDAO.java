@@ -6,6 +6,7 @@ import java.util.List;
 public interface TipoIngressoDAO {
     void salvar(TipoIngresso tipoIngresso);
     TipoIngresso buscarPorId(Long id);
+    TipoIngresso buscarPorIdEOrganizador(Long idTipoIngresso, Long idOrganizador);
     List<TipoIngresso> listarPorEvento(Long idEvento);
     void atualizar(TipoIngresso tipoIngresso);
     void deletar(Long id);
