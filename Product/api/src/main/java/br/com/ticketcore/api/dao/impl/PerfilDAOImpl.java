@@ -94,6 +94,46 @@ public class PerfilDAOImpl implements PerfilDAO {
         }
     }
 
+    @Override
+    public Perfil buscarPorNome(String nome) {
+        String sql = "SELECT per_id_perfil, per_nm_perfil FROM PER_perfil WHERE per_nm_perfil = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nome);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapear(rs);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar perfil por nome", e);
+        }
+        return null;
+    }
+
+    @Override
+    public List<String> buscarNomesPorUsuario(Long idUsuario) {
+        String sql = """
+                SELECT p.per_nm_perfil
+                FROM PER_perfil p
+                JOIN USP_usuario_perfil usp ON usp.usp_id_perfil = p.per_id_perfil
+                WHERE usp.usp_id_usuario = ?
+                """;
+        List<String> nomes = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, idUsuario);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    nomes.add(rs.getString(1));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Erro ao buscar nomes de perfis por usuário", e);
+        }
+        return nomes;
+    }
+
     private Perfil mapear(ResultSet rs) throws SQLException {
         Perfil obj = new Perfil();
         obj.setIdPerfil(rs.getLong("per_id_perfil"));
