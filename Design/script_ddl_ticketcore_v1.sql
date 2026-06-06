@@ -1,8 +1,8 @@
 -- ==============================================================================
 -- SISTEMA: TicketCore (Gestão e Comercialização de Ingressos)
 -- SGBD: PostgreSQL
--- VERSÃO: 1.1
--- ALTERAÇÕES v1.1: Removida tabela WEB_webhook; adicionada tabela NOT_notificacao; adicionado seed para tabela PER_perfil
+-- VERSÃO: 1.2
+-- ALTERAÇÕES v1.2: Seed completo com categorias, eventos, tipos de ingresso, transação, ingresso e notificações de exemplo
 -- ==============================================================================
 
 -- ==========================================
@@ -110,6 +110,7 @@ CREATE INDEX IDX_not_usuario     ON NOT_notificacao(not_id_usuario);
 
 CREATE OR REPLACE VIEW VW_resumo_vendas_evento AS
 SELECT
+    e.eve_id_organizador,
     e.eve_id_evento,
     e.eve_nm_evento,
     e.eve_dt_evento,
@@ -127,6 +128,7 @@ LEFT JOIN ING_ingresso i
        ON tpi.tpi_id_tipo_ingresso = i.ing_id_tipo_ingresso
       AND i.ing_st_ingresso IN ('A', 'U')
 GROUP BY
+    e.eve_id_organizador,
     e.eve_id_evento,
     e.eve_nm_evento,
     e.eve_dt_evento,
@@ -267,5 +269,102 @@ $$;
 -- PARTE 6: DADOS INICIAIS (Seed)
 -- ==========================================
 
+-- Perfis do sistema
 INSERT INTO PER_perfil (per_nm_perfil) VALUES ('COMPRADOR');
 INSERT INTO PER_perfil (per_nm_perfil) VALUES ('ORGANIZADOR');
+
+-- Categorias de eventos
+INSERT INTO CAT_categoria (cat_nm_categoria, cat_ds_categoria) VALUES
+    ('Shows',        'Apresentações musicais e artísticas'),
+    ('Esportes',     'Eventos esportivos e competições'),
+    ('Teatro',       'Peças teatrais e apresentações cênicas'),
+    ('Conferências', 'Eventos corporativos e acadêmicos'),
+    ('Festivais',    'Festivais culturais e de entretenimento'),
+    ('Gastronomia',  'Feiras e festivais gastronômicos');
+
+-- Usuários de exemplo (senha: Ticket@123)
+-- OBS: Inserir pela aplicação
+INSERT INTO USU_usuario (usu_nm_usuario, usu_ds_email, usu_ds_senha, usu_nu_cpf_cnpj) VALUES
+    ('Comprador Teste',   'comprador@ticketcore.com',   '$2a$10$EU6FVLHDLsUjvDYS1E4fVOBVjoWTuqKM2aUUN3FCzYhuE6.lgMvlm', '12345678901'),
+    ('Organizador Teste', 'organizador@ticketcore.com', '$2a$10$EU6FVLHDLsUjvDYS1E4fVOBVjoWTuqKM2aUUN3FCzYhuE6.lgMvlm', '98765432100');
+
+-- Vínculos de perfil dos usuários de seed
+-- (IDs gerados pela sequência; ajustar se os IDs não forem os esperados após inserção das categorias/perfis)
+INSERT INTO USP_usuario_perfil (usp_id_usuario, usp_id_perfil)
+    SELECT u.usu_id_usuario, p.per_id_perfil
+    FROM USU_usuario u, PER_perfil p
+    WHERE u.usu_ds_email = 'comprador@ticketcore.com' AND p.per_nm_perfil = 'COMPRADOR';
+
+INSERT INTO USP_usuario_perfil (usp_id_usuario, usp_id_perfil)
+    SELECT u.usu_id_usuario, p.per_id_perfil
+    FROM USU_usuario u, PER_perfil p
+    WHERE u.usu_ds_email = 'organizador@ticketcore.com' AND p.per_nm_perfil = 'ORGANIZADOR';
+
+-- Eventos de exemplo (criados pelo organizador seed)
+INSERT INTO EVE_evento
+    (eve_id_organizador, eve_id_categoria, eve_nm_evento, eve_dt_evento, eve_nm_local, eve_qt_capacidade)
+SELECT
+    u.usu_id_usuario,
+    c.cat_id_categoria,
+    'Festival de Rock TicketCore',
+    '2027-03-15 20:00:00',
+    'Arena Central — São Paulo/SP',
+    500
+FROM USU_usuario u, CAT_categoria c
+WHERE u.usu_ds_email = 'organizador@ticketcore.com' AND c.cat_nm_categoria = 'Shows';
+
+INSERT INTO EVE_evento
+    (eve_id_organizador, eve_id_categoria, eve_nm_evento, eve_dt_evento, eve_nm_local, eve_qt_capacidade)
+SELECT
+    u.usu_id_usuario,
+    c.cat_id_categoria,
+    'Hamlet — Temporada 2027',
+    '2027-04-10 19:30:00',
+    'Teatro Municipal — Rio de Janeiro/RJ',
+    200
+FROM USU_usuario u, CAT_categoria c
+WHERE u.usu_ds_email = 'organizador@ticketcore.com' AND c.cat_nm_categoria = 'Teatro';
+
+-- Tipos de ingresso dos eventos de seed
+INSERT INTO TPI_tipo_ingresso (tpi_id_evento, tpi_nm_tipo, tpi_vl_preco, tpi_qt_lote)
+SELECT e.eve_id_evento, 'Pista', 150.00, 400
+FROM EVE_evento e WHERE e.eve_nm_evento = 'Festival de Rock TicketCore';
+
+INSERT INTO TPI_tipo_ingresso (tpi_id_evento, tpi_nm_tipo, tpi_vl_preco, tpi_qt_lote)
+SELECT e.eve_id_evento, 'VIP', 350.00, 100
+FROM EVE_evento e WHERE e.eve_nm_evento = 'Festival de Rock TicketCore';
+
+INSERT INTO TPI_tipo_ingresso (tpi_id_evento, tpi_nm_tipo, tpi_vl_preco, tpi_qt_lote)
+SELECT e.eve_id_evento, 'Plateia', 80.00, 150
+FROM EVE_evento e WHERE e.eve_nm_evento = 'Hamlet — Temporada 2027';
+
+INSERT INTO TPI_tipo_ingresso (tpi_id_evento, tpi_nm_tipo, tpi_vl_preco, tpi_qt_lote)
+SELECT e.eve_id_evento, 'Camarote', 200.00, 50
+FROM EVE_evento e WHERE e.eve_nm_evento = 'Hamlet — Temporada 2027';
+
+-- Transação de exemplo: comprador compra 1 ingresso Pista do Festival de Rock
+INSERT INTO TRA_transacao (tra_id_comprador, tra_st_transacao, tra_vl_total)
+SELECT u.usu_id_usuario, 'C', 150.00
+FROM USU_usuario u WHERE u.usu_ds_email = 'comprador@ticketcore.com';
+
+-- Ingresso gerado para a transação acima
+INSERT INTO ING_ingresso (ing_id_transacao, ing_id_tipo_ingresso, ing_cd_acesso, ing_st_ingresso)
+SELECT
+    t.tra_id_transacao,
+    ti.tpi_id_tipo_ingresso,
+    'A1B2C3D4E5F6',
+    'A'
+FROM TRA_transacao t
+JOIN USU_usuario u ON u.usu_id_usuario = t.tra_id_comprador
+JOIN TPI_tipo_ingresso ti ON ti.tpi_nm_tipo = 'Pista'
+JOIN EVE_evento e ON e.eve_id_evento = ti.tpi_id_evento
+WHERE u.usu_ds_email = 'comprador@ticketcore.com';
+
+-- Notificações de exemplo
+INSERT INTO NOT_notificacao (not_id_usuario, not_ds_mensagem)
+SELECT usu_id_usuario, 'Sua compra foi confirmada! 1 ingresso para Festival de Rock TicketCore.'
+FROM USU_usuario WHERE usu_ds_email = 'comprador@ticketcore.com';
+
+INSERT INTO NOT_notificacao (not_id_usuario, not_ds_mensagem)
+SELECT usu_id_usuario, 'Nova venda confirmada para o evento Festival de Rock TicketCore. Valor: R$ 150,00.'
+FROM USU_usuario WHERE usu_ds_email = 'organizador@ticketcore.com';
